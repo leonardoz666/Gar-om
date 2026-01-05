@@ -332,7 +332,7 @@ export function NovoPedido() {
                         const tipo = prod.tipoOpcao || (prod.temOpcaoTamanho ? 'tamanho_pg' : 'padrao');
                         
                         if (tipo === 'refrigerante') {
-                          return Object.entries(cart)
+                          const items = Object.entries(cart)
                             .filter(([k]) => k.startsWith(`${prod.id}-`) && cart[k] > 0)
                             .map(([k, q]) => {
                               const parts = k.split('-');
@@ -346,6 +346,15 @@ export function NovoPedido() {
                                  </span>
                               );
                             });
+
+                          if (cartObservations[prod.id!]) {
+                            items.push(
+                              <span key="obs" className="text-[10px] text-yellow-200 italic drop-shadow-lg leading-tight text-center px-1 truncate w-full">
+                                {cartObservations[prod.id!]}
+                              </span>
+                            );
+                          }
+                          return items;
                         }
 
                         if (tipo === 'sabores_com_tamanho' && prod.sabores) {
@@ -872,6 +881,11 @@ export function NovoPedido() {
                         {item.size && (
                           <span className="text-xs font-bold text-blue-400 bg-blue-900/30 px-2 py-0.5 rounded mt-1 inline-block">
                             Tamanho {item.size}
+                          </span>
+                        )}
+                        {cartObservations[item.product.id!] && (
+                          <span className="text-xs italic text-zinc-400 block mt-1">
+                            Obs: {cartObservations[item.product.id!]}
                           </span>
                         )}
                       </div>
