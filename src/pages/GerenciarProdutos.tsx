@@ -146,12 +146,12 @@ export function GerenciarProdutos() {
       </header>
 
       {/* Product List */}
-      <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <div className="p-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
         {filteredProdutos?.map((prod, idx) => (
           <div 
             key={prod.id} 
             style={{ animationDelay: `${idx * 50}ms` }}
-            className="group relative flex flex-col bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-300 animate-in fade-in zoom-in-50 fill-mode-backwards"
+            className="group relative flex flex-col bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-300 animate-in fade-in zoom-in-50 fill-mode-backwards"
           >
             {/* Image Area */}
             <div 
@@ -166,24 +166,26 @@ export function GerenciarProdutos() {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-zinc-700 bg-zinc-800/50">
-                  <ImageIcon size={32} strokeWidth={1.5} />
+                  <ImageIcon size={24} strokeWidth={1.5} />
                 </div>
               )}
               
-              {/* Type Badge */}
-              <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md p-1.5 rounded-lg border border-white/10 shadow-lg">
-                {getProductIcon(prod)}
+              {/* Type Badge - Smaller */}
+              <div className="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-md p-1 rounded-md border border-white/10 shadow-lg">
+                {prod.isDrink ? <Wine size={14} className="text-purple-400" /> : 
+                 (prod.tipoOpcao === 'sabores' || prod.tipoOpcao === 'sabores_com_tamanho') ? <Pizza size={14} className="text-orange-400" /> :
+                 <Utensils size={14} className="text-blue-400" />}
               </div>
 
-              {/* Delete Button (Floating) */}
+              {/* Delete Button (Floating) - Smaller */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setDeleteConfirmationId(prod.id!);
                 }}
-                className="absolute top-2 right-2 p-2 bg-red-500/80 backdrop-blur-md text-white rounded-lg hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 duration-200 shadow-lg"
+                className="absolute top-1.5 right-1.5 p-1.5 bg-red-500/80 backdrop-blur-md text-white rounded-md hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 duration-200 shadow-lg"
               >
-                <Trash2 size={16} />
+                <Trash2 size={14} />
               </button>
 
               {/* Gradient Overlay */}
@@ -193,22 +195,22 @@ export function GerenciarProdutos() {
             {/* Content */}
             <div 
               onClick={() => handleEdit(prod)}
-              className="p-3 pt-2 relative cursor-pointer"
+              className="p-2 pt-1.5 relative cursor-pointer"
             >
-              <div className="flex items-start justify-between gap-2">
-                <span className="font-bold text-sm leading-tight text-zinc-200 line-clamp-2">{prod.nome}</span>
+              <div className="flex items-start justify-between gap-1">
+                <span className="font-bold text-xs leading-tight text-zinc-200 line-clamp-2">{prod.nome}</span>
               </div>
               
-              <div className="mt-2 flex flex-wrap gap-1">
+              <div className="mt-1.5 flex flex-wrap gap-1">
                 {prod.tipoOpcao !== 'padrao' && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-zinc-800 text-zinc-400 border border-zinc-700/50">
+                  <span className="text-[9px] px-1 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/50 leading-none">
                     {prod.tipoOpcao === 'refrigerante' ? 'Bebida' : 
                      prod.tipoOpcao === 'tamanho_pg' ? 'P/G' : 
                      prod.tipoOpcao === 'combinado' ? 'Combinado' : 'Variações'}
                   </span>
                 )}
                 {prod.isDrink && (
-                   <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                   <span className="text-[9px] px-1 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 leading-none">
                      Drink
                    </span>
                 )}
@@ -219,10 +221,10 @@ export function GerenciarProdutos() {
 
         {filteredProdutos?.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center py-12 text-zinc-500 gap-3">
-            <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center">
-              <Search size={24} />
+            <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center">
+              <Search size={20} />
             </div>
-            <p>Nenhum produto encontrado</p>
+            <p className="text-sm">Nenhum produto encontrado</p>
           </div>
         )}
       </div>
@@ -230,137 +232,150 @@ export function GerenciarProdutos() {
       {/* Modal Add/Edit Product */}
       {isAdding && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-zinc-900 w-full max-w-sm rounded-2xl p-6 border border-zinc-800 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">{editingId ? 'Editar Produto' : 'Novo Produto'}</h2>
-              <button onClick={resetForm} className="text-zinc-400 hover:text-white">
-                <X size={24} />
+          <div className="bg-zinc-900 w-full max-w-sm max-h-[90vh] rounded-2xl border border-zinc-800 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b border-zinc-800 shrink-0">
+              <h2 className="text-lg font-bold">{editingId ? 'Editar Produto' : 'Novo Produto'}</h2>
+              <button onClick={resetForm} className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-zinc-800">
+                <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-4">
-              {/* Image Upload */}
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="aspect-video bg-zinc-800 rounded-xl border-2 border-dashed border-zinc-700 flex flex-col items-center justify-center cursor-pointer hover:border-zinc-500 transition-colors relative overflow-hidden"
-              >
-                {foto ? (
-                  <img src={foto} alt="Preview" className="w-full h-full object-cover" />
-                ) : (
-                  <>
-                    <Upload size={32} className="text-zinc-500 mb-2" />
-                    <span className="text-sm text-zinc-500">Toque para adicionar foto</span>
-                  </>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-              </div>
-
-              {/* Name */}
-              <div>
-                <label className="text-sm font-medium text-zinc-400 block mb-1">Nome do Produto</label>
-                <input
-                  type="text"
-                  value={nome}
-                  onChange={e => setNome(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-zinc-100 focus:ring-2 focus:ring-blue-600 outline-none"
-                  placeholder="Ex: Hambúrguer"
-                  autoFocus
-                />
-              </div>
-
-              {/* Option Type */}
-              <div>
-                <label className="text-sm font-medium text-zinc-400 block mb-1">Tipo de Opção</label>
-                <select
-                  value={tipoOpcao}
-                  onChange={e => setTipoOpcao(e.target.value as any)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-zinc-100 outline-none focus:ring-2 focus:ring-blue-600"
+            <div className="overflow-y-auto p-4 scrollbar-hide">
+              <form id="product-form" onSubmit={handleSave} className="space-y-4">
+                {/* Image Upload - More Compact */}
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-32 w-full bg-zinc-800 rounded-xl border-2 border-dashed border-zinc-700 flex flex-col items-center justify-center cursor-pointer hover:border-zinc-500 transition-colors relative overflow-hidden group"
                 >
-                  <option value="padrao">Padrão (Sem variações)</option>
-                  <option value="tamanho_pg">Tamanho (P/G)</option>
-                  <option value="refrigerante">Refrigerante (Lata/Litro/KS + Normal/Zero)</option>
-                  <option value="sabores">Apenas Sabores/Variações</option>
-                  <option value="sabores_com_tamanho">Sabores + Tamanho (P/G)</option>
-                  <option value="combinado">Combinado (Escolha Múltipla)</option>
-                </select>
-              </div>
-
-              {/* Is Drink Checkbox */}
-              <div className="flex items-center gap-3 bg-zinc-950/50 p-3 rounded-xl border border-zinc-800 cursor-pointer" onClick={() => setIsDrink(!isDrink)}>
-                <div className={clsx(
-                  "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors",
-                  isDrink ? "bg-blue-600 border-blue-600" : "border-zinc-600 bg-zinc-900"
-                )}>
-                  {isDrink && <Plus size={16} className="text-white rotate-45" />}
-                </div>
-                <div>
-                  <span className="text-sm font-bold text-zinc-200">Este produto é um Drink?</span>
-                  <p className="text-xs text-zinc-500">Ativa opções como "Com Álcool" e "Sem Álcool"</p>
-                </div>
-              </div>
-
-              {/* Sabores List */}
-              {(tipoOpcao === 'sabores' || tipoOpcao === 'sabores_com_tamanho' || tipoOpcao === 'combinado') && (
-                <div className="space-y-3 bg-zinc-950/50 p-3 rounded-xl border border-zinc-800">
-                  <label className="text-sm font-medium text-zinc-400">Sabores/Variações</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newSabor}
-                      onChange={e => setNewSabor(e.target.value)}
-                      placeholder="Adicionar sabor/variação..."
-                      className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm text-zinc-100 focus:ring-2 focus:ring-blue-600 outline-none"
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddSabor(e);
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddSabor}
-                      disabled={!newSabor}
-                      className="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-lg disabled:opacity-50 transition-colors"
-                    >
-                      <Plus size={20} />
-                    </button>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {sabores.map(sabor => (
-                      <div key={sabor} className="bg-zinc-800 text-zinc-200 text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1">
-                        <span>{sabor}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveSabor(sabor)}
-                          className="text-zinc-500 hover:text-red-400"
-                        >
-                          <X size={14} />
-                        </button>
+                  {foto ? (
+                    <>
+                      <img src={foto} alt="Preview" className="w-full h-full object-cover opacity-80 group-hover:opacity-60 transition-opacity" />
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Pencil className="text-white drop-shadow-md" size={24} />
                       </div>
-                    ))}
-                    {sabores.length === 0 && (
-                      <p className="text-zinc-500 text-xs italic w-full text-center py-2">Nenhuma variação adicionada</p>
-                    )}
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={24} className="text-zinc-500 mb-2" />
+                      <span className="text-xs text-zinc-500">Toque para adicionar foto</span>
+                    </>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
+                </div>
+
+                {/* Name */}
+                <div>
+                  <label className="text-xs font-bold text-zinc-400 block mb-1 uppercase tracking-wider">Nome do Produto</label>
+                  <input
+                    type="text"
+                    value={nome}
+                    onChange={e => setNome(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-100 focus:ring-2 focus:ring-blue-600 outline-none text-sm"
+                    placeholder="Ex: Hambúrguer"
+                    autoFocus
+                  />
+                </div>
+
+                {/* Option Type */}
+                <div>
+                  <label className="text-xs font-bold text-zinc-400 block mb-1 uppercase tracking-wider">Tipo de Opção</label>
+                  <select
+                    value={tipoOpcao}
+                    onChange={e => setTipoOpcao(e.target.value as any)}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-100 outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                  >
+                    <option value="padrao">Padrão (Sem variações)</option>
+                    <option value="tamanho_pg">Tamanho (P/G)</option>
+                    <option value="refrigerante">Refrigerante (Lata/Litro/KS + Normal/Zero)</option>
+                    <option value="sabores">Apenas Sabores/Variações</option>
+                    <option value="sabores_com_tamanho">Sabores + Tamanho (P/G)</option>
+                    <option value="combinado">Combinado (Escolha Múltipla)</option>
+                  </select>
+                </div>
+
+                {/* Is Drink Checkbox - Compact */}
+                <div 
+                  className="flex items-center gap-3 bg-zinc-950/50 p-2.5 rounded-lg border border-zinc-800 cursor-pointer active:bg-zinc-900 transition-colors" 
+                  onClick={() => setIsDrink(!isDrink)}
+                >
+                  <div className={clsx(
+                    "w-5 h-5 rounded border flex items-center justify-center transition-colors shrink-0",
+                    isDrink ? "bg-blue-600 border-blue-600" : "border-zinc-600 bg-zinc-900"
+                  )}>
+                    {isDrink && <Plus size={14} className="text-white rotate-45" />}
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-zinc-200">É Bebida/Drink?</span>
+                    <p className="text-[10px] text-zinc-500 leading-tight">Habilita opções "Com/Sem Álcool"</p>
                   </div>
                 </div>
-              )}
 
+                {/* Sabores List */}
+                {(tipoOpcao === 'sabores' || tipoOpcao === 'sabores_com_tamanho' || tipoOpcao === 'combinado') && (
+                  <div className="space-y-2 bg-zinc-950/50 p-3 rounded-xl border border-zinc-800">
+                    <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Sabores/Variações</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newSabor}
+                        onChange={e => setNewSabor(e.target.value)}
+                        placeholder="Novo sabor..."
+                        className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm text-zinc-100 focus:ring-2 focus:ring-blue-600 outline-none"
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddSabor(e);
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddSabor}
+                        disabled={!newSabor}
+                        className="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-lg disabled:opacity-50 transition-colors"
+                      >
+                        <Plus size={18} />
+                      </button>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+                      {sabores.map(sabor => (
+                        <div key={sabor} className="bg-zinc-800 text-zinc-200 text-xs font-medium px-2 py-1 rounded-md flex items-center gap-1 border border-zinc-700/50">
+                          <span>{sabor}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSabor(sabor)}
+                            className="text-zinc-500 hover:text-red-400 p-0.5 rounded-full hover:bg-zinc-700/50"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                      {sabores.length === 0 && (
+                        <p className="text-zinc-600 text-xs italic w-full text-center py-1">Nenhuma variação</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </form>
+            </div>
+
+            <div className="p-4 border-t border-zinc-800 shrink-0 bg-zinc-900 rounded-b-2xl">
               <button
                 type="submit"
+                form="product-form"
                 disabled={!nome || ((tipoOpcao === 'sabores' || tipoOpcao === 'sabores_com_tamanho' || tipoOpcao === 'combinado') && sabores.length === 0)}
-                className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl active:scale-[0.98] transition-transform disabled:opacity-50 mt-4"
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 shadow-lg shadow-blue-900/20"
               >
                 {editingId ? 'Salvar Alterações' : 'Criar Produto'}
               </button>
-            </form>
+            </div>
           </div>
         </div>
       )}
