@@ -198,8 +198,11 @@ export function NovoPedido() {
 
     // Update table status
     const mesa = await db.mesas.get(id);
-    if (mesa && mesa.status === 'aberta') {
-      await db.mesas.update(id, { status: 'em_andamento' });
+    if (mesa) {
+      await db.mesas.update(id, { 
+        statusLancamento: 'esperando_lancamento',
+        ...(mesa.status === 'aberta' ? { status: 'em_andamento' } : {})
+      });
     }
 
     if (navigator.vibrate) navigator.vibrate(50);
