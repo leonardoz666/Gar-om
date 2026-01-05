@@ -164,7 +164,7 @@ export function Home() {
         </div>
       </header>
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
         {mesas?.map(mesa => (
           <Link 
             key={mesa.id} 
@@ -174,63 +174,69 @@ export function Home() {
               handleStatusClick(e, mesa.id);
             }}
             className={clsx(
-              "block p-4 rounded-xl border transition-all active:scale-[0.98]",
+              "flex flex-col p-3 rounded-xl border transition-all active:scale-[0.98] min-h-[140px]",
               "bg-zinc-900",
               getStatusColor(mesa.status)
             )}
           >
             <div className="flex justify-between items-start mb-2">
-              <span className="text-3xl font-bold">Mesa {mesa.numero}</span>
-              <div className="flex flex-col items-end gap-2">
-                <span className={clsx(
-                  "px-2 py-1 rounded text-xs font-bold uppercase tracking-wider",
-                  "bg-black/20"
-                )}>
-                  {getStatusLabel(mesa.status)}
-                </span>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold">Mesa {mesa.numero}</span>
                 {((pendingItemsCount?.[mesa.id] ?? 0) > 0) && (
                   <span className={clsx(
-                    "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border",
+                    "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border",
                     "bg-amber-500/20 text-amber-300 border-amber-500/30"
                   )}>
-                    Pendentes: {pendingItemsCount?.[mesa.id] ?? 0}
+                    +{pendingItemsCount?.[mesa.id] ?? 0}
                   </span>
                 )}
-                <button
-                  onClick={(e) => handleStatusClick(e, mesa.id)}
-                  className={clsx(
-                    "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border flex items-center gap-1 transition-colors",
-                    mesa.statusLancamento === 'lancado'
-                      ? "bg-blue-500/20 text-blue-300 border-blue-500/30 hover:bg-blue-500/30"
-                      : "bg-orange-500/20 text-orange-300 border-orange-500/30 hover:bg-orange-500/30"
-                  )}
-                >
-                  {mesa.statusLancamento === 'lancado' ? (
-                     <>
-                       <CheckCircle2 size={12} />
-                       Lançado
-                     </>
-                  ) : (
-                     <>
-                       <AlertCircle size={12} />
-                       Esperando Lançamento
-                     </>
-                  )}
-                </button>
               </div>
             </div>
-            
-            <div className="flex justify-between items-end">
-              <div className="flex items-center gap-1.5 text-sm opacity-80">
-                <Clock size={16} />
-                <span>{formatDuration(mesa.abertaEm)}</span>
+
+            <div className="flex flex-col gap-2 mb-2">
+              <div className="flex flex-wrap gap-1">
+                {mesa.status !== 'em_andamento' && (
+                  <span className={clsx(
+                    "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider",
+                    "bg-black/20"
+                  )}>
+                    {getStatusLabel(mesa.status)}
+                  </span>
+                )}
               </div>
+
+              <button
+                onClick={(e) => handleStatusClick(e, mesa.id)}
+                className={clsx(
+                  "w-full px-2 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider border flex items-center justify-center gap-1 transition-colors",
+                  mesa.statusLancamento === 'lancado'
+                    ? "bg-blue-500/20 text-blue-300 border-blue-500/30 hover:bg-blue-500/30"
+                    : "bg-orange-500/20 text-orange-300 border-orange-500/30 hover:bg-orange-500/30"
+                )}
+              >
+                {mesa.statusLancamento === 'lancado' ? (
+                   <>
+                     <CheckCircle2 size={12} />
+                     Lançado
+                   </>
+                ) : (
+                   <>
+                     <AlertCircle size={12} />
+                     Pendente
+                   </>
+                )}
+              </button>
+            </div>
+            
+            <div className="mt-auto flex items-center gap-1.5 text-xs opacity-80 pt-2 border-t border-black/10">
+              <Clock size={14} />
+              <span>{formatDuration(mesa.abertaEm)}</span>
             </div>
           </Link>
         ))}
 
         {mesas?.length === 0 && (
-          <div className="text-center py-12 text-zinc-500">
+          <div className="col-span-2 text-center py-12 text-zinc-500">
             <p>Nenhuma mesa aberta</p>
           </div>
         )}

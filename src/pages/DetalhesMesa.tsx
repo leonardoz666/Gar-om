@@ -65,11 +65,20 @@ export function DetalhesMesa() {
             )}
           >
             <div className="flex-1">
-              <div className="font-bold leading-tight mb-1">
-                <span className="text-xl mr-1.5">{item.quantidade}x</span>
-                <span className={clsx("text-sm", item.cancelado && "line-through")}>
-                  {item.descricao}
-                </span>
+              <div className="flex justify-between items-start mb-1">
+                <div className="font-bold leading-tight">
+                  <span className="text-xl mr-1.5">{item.quantidade}x</span>
+                  <span className={clsx("text-sm", item.cancelado && "line-through")}>
+                    {item.descricao}
+                  </span>
+                </div>
+                <div className={clsx(
+                  "flex items-center text-[10px] font-medium bg-zinc-950/30 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap",
+                  !item.entregue && !item.cancelado ? "text-amber-400" : "text-zinc-500"
+                )}>
+                  <Clock size={10} className="mr-1" />
+                  {formatDuration(item.criadoEm)}
+                </div>
               </div>
               {item.observacao && (
                 <p className="text-xs text-zinc-400 italic leading-snug line-clamp-3">
