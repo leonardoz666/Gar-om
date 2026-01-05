@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Produto } from '../db';
-import { ArrowLeft, Plus, Search, Trash2, Upload, X, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, Search, Trash2, Upload, X, Pencil, ImageIcon, Wine, Pizza, Utensils } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { ConfirmationModal } from '../components/ConfirmationModal';
@@ -107,66 +107,124 @@ export function GerenciarProdutos() {
     }
   };
 
+  const getProductIcon = (prod: Produto) => {
+    if (prod.isDrink) return <Wine size={20} className="text-purple-400" />;
+    if (prod.tipoOpcao === 'sabores' || prod.tipoOpcao === 'sabores_com_tamanho') return <Pizza size={20} className="text-orange-400" />;
+    return <Utensils size={20} className="text-blue-400" />;
+  };
+
   return (
-    <div className="min-h-screen p-4 max-w-md mx-auto">
-      <header className="flex items-center gap-4 mb-6">
-        <button onClick={() => navigate('/')} className="p-2 -ml-2 text-zinc-400">
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="text-xl font-bold">Cardápio</h1>
+    <div className="min-h-screen pb-32 bg-zinc-950 relative">
+      <header className="sticky top-0 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 z-10 p-4">
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={() => navigate('/')} className="p-2 -ml-2 text-zinc-400 hover:text-white transition-colors">
+            <ArrowLeft size={24} />
+          </button>
+          <h1 className="text-xl font-bold">Gerenciar Cardápio</h1>
+          <div className="w-10" /> {/* Spacer */}
+        </div>
+
+        {/* Search & Add */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="Buscar..."
+              className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-zinc-100 focus:ring-2 focus:ring-blue-600 outline-none text-sm placeholder:text-zinc-600"
+            />
+          </div>
+          <button
+            onClick={() => setIsAdding(true)}
+            className="bg-blue-600 text-white font-bold p-2.5 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20 active:scale-95 transition-transform"
+          >
+            <Plus size={20} />
+          </button>
+        </div>
       </header>
 
-      {/* Search */}
-      <div className="relative mb-6">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          placeholder="Pesquisar produtos..."
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3 pl-12 pr-4 text-zinc-100 focus:ring-2 focus:ring-blue-600 outline-none"
-        />
-      </div>
-
-      {/* Add Button */}
-      <button
-        onClick={() => setIsAdding(true)}
-        className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 mb-8 active:scale-[0.98] transition-transform"
-      >
-        <Plus size={20} />
-        Novo Produto
-      </button>
-
       {/* Product List */}
-      <div className="grid grid-cols-2 gap-4">
-        {filteredProdutos?.map(prod => (
-          <div key={prod.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden flex flex-col">
-            <div className="aspect-square bg-zinc-800 relative">
+      <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        {filteredProdutos?.map((prod, idx) => (
+          <div 
+            key={prod.id} 
+            style={{ animationDelay: `${idx * 50}ms` }}
+            className="group relative flex flex-col bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-300 animate-in fade-in zoom-in-50 fill-mode-backwards"
+          >
+            {/* Image Area */}
+            <div 
+              onClick={() => handleEdit(prod)}
+              className="aspect-square w-full bg-zinc-800 relative overflow-hidden cursor-pointer"
+            >
               {prod.foto ? (
-                <img src={prod.foto} alt={prod.nome} className="w-full h-full object-cover" />
+                <img 
+                  src={prod.foto} 
+                  alt={prod.nome} 
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-zinc-600">
-                  <span className="text-4xl font-bold">{prod.nome[0].toUpperCase()}</span>
+                <div className="w-full h-full flex items-center justify-center text-zinc-700 bg-zinc-800/50">
+                  <ImageIcon size={32} strokeWidth={1.5} />
                 </div>
               )}
+              
+              {/* Type Badge */}
+              <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md p-1.5 rounded-lg border border-white/10 shadow-lg">
+                {getProductIcon(prod)}
+              </div>
+
+              {/* Delete Button (Floating) */}
               <button
-                onClick={() => handleEdit(prod)}
-                className="absolute top-2 right-12 p-2 bg-black/50 text-white rounded-full hover:bg-blue-500 transition-colors"
-              >
-                <Pencil size={16} />
-              </button>
-              <button
-                onClick={() => setDeleteConfirmationId(prod.id!)}
-                className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-red-500 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteConfirmationId(prod.id!);
+                }}
+                className="absolute top-2 right-2 p-2 bg-red-500/80 backdrop-blur-md text-white rounded-lg hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 duration-200 shadow-lg"
               >
                 <Trash2 size={16} />
               </button>
+
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent opacity-60" />
             </div>
-            <div className="p-3 text-center">
-              <span className="font-bold block truncate">{prod.nome}</span>
+
+            {/* Content */}
+            <div 
+              onClick={() => handleEdit(prod)}
+              className="p-3 pt-2 relative cursor-pointer"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-bold text-sm leading-tight text-zinc-200 line-clamp-2">{prod.nome}</span>
+              </div>
+              
+              <div className="mt-2 flex flex-wrap gap-1">
+                {prod.tipoOpcao !== 'padrao' && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-zinc-800 text-zinc-400 border border-zinc-700/50">
+                    {prod.tipoOpcao === 'refrigerante' ? 'Bebida' : 
+                     prod.tipoOpcao === 'tamanho_pg' ? 'P/G' : 
+                     prod.tipoOpcao === 'combinado' ? 'Combinado' : 'Variações'}
+                  </span>
+                )}
+                {prod.isDrink && (
+                   <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                     Drink
+                   </span>
+                )}
+              </div>
             </div>
           </div>
         ))}
+
+        {filteredProdutos?.length === 0 && (
+          <div className="col-span-full flex flex-col items-center justify-center py-12 text-zinc-500 gap-3">
+            <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center">
+              <Search size={24} />
+            </div>
+            <p>Nenhum produto encontrado</p>
+          </div>
+        )}
       </div>
 
       {/* Modal Add/Edit Product */}
