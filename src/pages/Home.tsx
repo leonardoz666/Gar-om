@@ -31,7 +31,7 @@ export function Home() {
     const counts: Record<string, number> = {};
     for (const mesa of mesas) {
       const itens = await db.itens.where('mesaId').equals(mesa.id).toArray();
-      counts[mesa.id] = itens.filter(i => !i.entregue && !i.cancelado).length;
+      counts[mesa.id] = itens.filter(i => !i.lancado && !i.cancelado).length;
     }
     return counts;
   }, [mesas]);
@@ -136,11 +136,11 @@ export function Home() {
     seedAndCleanup();
   }, []);
 
-  const getStatusColor = (mesa: Mesa) => {
+  const getStatusColor = (mesa: Mesa, pendingCount: number) => {
     switch (mesa.status) {
       case 'aberta': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
       case 'em_andamento': 
-        if (mesa.statusLancamento === 'lancado') {
+        if (pendingCount === 0) {
           return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
         }
         return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
@@ -184,7 +184,7 @@ export function Home() {
             className={clsx(
               "flex flex-col p-3 rounded-xl border transition-all active:scale-[0.98] min-h-[140px]",
               "bg-zinc-900",
-              getStatusColor(mesa)
+              getStatusColor(mesa, pendingItemsCount?.[mesa.id] ?? 0)
             )}
           >
             <div className="flex justify-between items-start mb-2">
@@ -252,9 +252,9 @@ export function Home() {
 
       <Link 
         to="/mesa/nova"
-        className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-900/50 active:scale-90 transition-transform"
+        className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-600/40 active:scale-90 transition-all hover:scale-105 hover:bg-blue-500 z-40 group"
       >
-        <Plus size={32} color="white" />
+        <Plus size={32} color="white" className="group-hover:rotate-90 transition-transform" />
       </Link>
 
       {editingStatusId && (

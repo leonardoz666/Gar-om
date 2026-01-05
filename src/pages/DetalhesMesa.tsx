@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { formatDuration } from '../utils/format';
-import { ArrowLeft, Plus, CheckCircle2, XCircle, DollarSign, Clock, Pencil, Share2, Copy } from 'lucide-react';
+import { ArrowLeft, Plus, CheckCircle2, XCircle, DollarSign, Clock, Share2, Copy, Send, UtensilsCrossed } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useState, useEffect } from 'react';
 
@@ -75,16 +75,60 @@ export function DetalhesMesa() {
 
   if (!mesa) return null;
 
+  const checkAndUpdateMesaStatus = async () => {
+    if (!id) return;
+    const allItems = await db.itens.where('mesaId').equals(id).toArray();
+    const hasPending = allItems.some(i => !i.lancado && !i.cancelado);
+    
+    await db.mesas.update(id, {
+      statusLancamento: hasPending ? 'esperando_lancamento' : 'lancado'
+    });
+  };
+
   const toggleEntregue = (itemId: string, current: boolean) => {
     db.itens.update(itemId, { entregue: !current });
     if (navigator.vibrate) navigator.vibrate(20);
   };
 
-  const handleToggleCancel = () => {
+  const toggleLancado = async (itemId: string, current: boolean) => {
+    await db.itens.update(itemId, { lancado: !current });
+    if (navigator.vibrate) navigator.vibrate(20);
+    checkAndUpdateMesaStatus();
+  };
+
+  const handleToggleCancel = async () => {
     if (itemToToggleCancel) {
-      db.itens.update(itemToToggleCancel.id, { cancelado: !itemToToggleCancel.current });
+      await db.itens.update(itemToToggleCancel.id, { cancelado: !itemToToggleCancel.current });
       setItemToToggleCancel(null);
+      checkAndUpdateMesaStatus();
     }
+  };
+
+  const getItemStatus = (item: any) => {
+    if (item.cancelado) return { 
+      label: 'CANCELADO', 
+      color: 'text-red-500', 
+      bg: 'bg-red-500/10 border-red-500/20',
+      container: 'border-red-500/30 shadow-[0_0_15px_-3px_rgba(239,68,68,0.2)]'
+    };
+    if (item.entregue) return { 
+      label: 'ENTREGUE', 
+      color: 'text-emerald-500', 
+      bg: 'bg-emerald-500/10 border-emerald-500/20',
+      container: 'border-emerald-500/30 shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]'
+    };
+    if (item.lancado) return { 
+      label: 'LANÇADO', 
+      color: 'text-blue-400', 
+      bg: 'bg-blue-500/10 border-blue-500/20',
+      container: 'border-blue-500/30 shadow-[0_0_15px_-3px_rgba(59,130,246,0.2)]'
+    };
+    return { 
+      label: 'PENDENTE', 
+      color: 'text-amber-400', 
+      bg: 'bg-amber-500/10 border-amber-500/20',
+      container: 'border-amber-500/30 shadow-[0_0_15px_-3px_rgba(245,158,11,0.2)]'
+    };
   };
 
   return (
@@ -112,69 +156,118 @@ export function DetalhesMesa() {
       </header>
 
       {/* Items List */}
-      <div className="p-4 grid grid-cols-2 gap-3">
-        {itens?.map(item => (
-          <div 
-            key={item.id} 
-            className={clsx(
-              "p-3 rounded-xl border flex flex-col justify-between gap-2 min-h-[140px]",
-              item.cancelado ? "bg-zinc-900/50 border-zinc-800 opacity-50" : "bg-zinc-900 border-zinc-800"
-            )}
-          >
-            <div className="flex-1">
-              <div className="flex justify-between items-start mb-1">
-                <div className="font-bold leading-tight">
-                  <span className="text-xl mr-1.5">{item.quantidade}x</span>
-                  <span className={clsx("text-sm", item.cancelado && "line-through")}>
-                    {item.descricao}
-                  </span>
-                </div>
-                <div className={clsx(
-                  "flex items-center text-[10px] font-medium bg-zinc-950/30 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap",
-                  item.cancelado ? "text-zinc-500" :
-                  !item.lancado ? "text-amber-400 font-bold" :
-                  !item.entregue ? "text-blue-400" : "text-emerald-500"
-                )}>
-                  <Clock size={10} className="mr-1" />
-                  {formatDuration(item.criadoEm)}
-                </div>
-              </div>
-              {item.observacao && (
-                <p className="text-xs text-zinc-400 italic leading-snug line-clamp-3">
-                  "{item.observacao}"
-                </p>
+      <div className="p-2 grid grid-cols-2 gap-2">
+        {itens?.map(item => {
+          const status = getItemStatus(item);
+          
+          return (
+            <div 
+              key={item.id} 
+              className={clsx(
+                "p-3 rounded-xl border flex flex-col gap-2 transition-all",
+                item.cancelado ? "bg-zinc-900/30" : "bg-zinc-900",
+                status.container
               )}
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-800/50 mt-auto">
-              {!item.cancelado && (
-                <>
-                  <Link
-                    to={`/mesa/${id}/pedido/${item.id}`}
-                    className="p-1.5 rounded-full bg-zinc-800 text-zinc-400 hover:text-blue-400"
-                  >
-                    <Pencil size={18} />
-                  </Link>
-                  <button
-                    onClick={() => toggleEntregue(item.id, item.entregue)}
+            >
+              {/* Header: Name (Clickable) & Timer */}
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-start gap-1">
+                  <Link 
+                    to={!item.cancelado ? `/mesa/${id}/pedido/${item.id}` : '#'}
                     className={clsx(
-                      "p-1.5 rounded-full transition-colors",
-                      item.entregue ? "bg-emerald-500/20 text-emerald-500" : "bg-zinc-800 text-zinc-600"
+                      "font-bold leading-tight group line-clamp-2",
+                      item.cancelado && "opacity-50 pointer-events-none"
                     )}
                   >
-                    <CheckCircle2 size={18} />
+                    <span className="text-lg text-zinc-300 mr-1">{item.quantidade}x</span>
+                    <span className={clsx(
+                      "text-base group-hover:text-blue-400 transition-colors",
+                      item.cancelado && "line-through"
+                    )}>
+                      {item.descricao}
+                    </span>
+                  </Link>
+
+                  <div className={clsx(
+                    "flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap border shrink-0",
+                    status.bg,
+                    status.color
+                  )}>
+                    <Clock size={10} className="mr-1" />
+                    {formatDuration(item.criadoEm)}
+                  </div>
+                </div>
+
+                {item.observacao && (
+                  <p className="text-[10px] text-zinc-500 italic font-normal line-clamp-2 leading-tight">
+                    "{item.observacao}"
+                  </p>
+                )}
+              </div>
+
+              {/* Status Indicator */}
+              <div className="flex flex-col gap-2 border-t border-zinc-800/50 pt-2 mt-auto">
+                <div className="flex items-center justify-between">
+                  <span className={clsx(
+                    "text-[9px] font-black uppercase tracking-wider truncate mr-1",
+                    status.color
+                  )}>
+                    {status.label}
+                  </span>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between gap-1">
+                  {/* Lançado Button */}
+                  <button
+                    onClick={() => toggleLancado(item.id, !!item.lancado)}
+                    disabled={!!item.cancelado}
+                    className={clsx(
+                      "flex-1 py-2 rounded-lg transition-all border flex items-center justify-center",
+                      item.lancado 
+                        ? "bg-blue-500 text-white border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]" 
+                        : "bg-zinc-800 text-zinc-500 border-zinc-700 hover:border-blue-500/50 hover:text-blue-400",
+                      item.cancelado && "opacity-20 grayscale pointer-events-none"
+                    )}
+                    title={item.lancado ? "Marcar como não lançado" : "Marcar como lançado"}
+                  >
+                    <UtensilsCrossed size={14} />
                   </button>
-                </>
-              )}
-               <button
-                  onClick={() => setItemToToggleCancel({ id: item.id, current: !!item.cancelado })}
-                  className="p-1.5 rounded-full bg-zinc-800 text-red-900 hover:text-red-500"
-                >
-                  <XCircle size={18} />
-                </button>
+
+                  {/* Entregue Button */}
+                  <button
+                    onClick={() => toggleEntregue(item.id, item.entregue)}
+                    disabled={!!item.cancelado}
+                    className={clsx(
+                      "flex-1 py-2 rounded-lg transition-all border flex items-center justify-center",
+                      item.entregue 
+                        ? "bg-emerald-500 text-white border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]" 
+                        : "bg-zinc-800 text-zinc-500 border-zinc-700 hover:border-emerald-500/50 hover:text-emerald-400",
+                       item.cancelado && "opacity-20 grayscale pointer-events-none"
+                    )}
+                    title={item.entregue ? "Marcar como não entregue" : "Marcar como entregue"}
+                  >
+                    <CheckCircle2 size={14} />
+                  </button>
+
+                  {/* Cancelar Button */}
+                  <button
+                    onClick={() => setItemToToggleCancel({ id: item.id, current: !!item.cancelado })}
+                    className={clsx(
+                      "flex-1 py-2 rounded-lg transition-all border flex items-center justify-center",
+                      item.cancelado 
+                        ? "bg-red-500 text-white border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]" 
+                        : "bg-zinc-800 text-zinc-500 border-zinc-700 hover:border-red-500/50 hover:text-red-400"
+                    )}
+                    title={item.cancelado ? "Restaurar item" : "Cancelar item"}
+                  >
+                    <XCircle size={14} />
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         
         {itens?.length === 0 && (
           <div className="col-span-2 text-center py-12 text-zinc-600">
@@ -208,7 +301,7 @@ export function DetalhesMesa() {
       />
 
       {/* Footer Actions */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-zinc-950 border-t border-zinc-900 flex gap-4">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-zinc-950 border-t border-zinc-900 flex gap-4 z-20">
         <Link 
           to={`/mesa/${id}/fechar`}
           className="flex-1 bg-zinc-800 text-zinc-300 font-bold py-4 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform"

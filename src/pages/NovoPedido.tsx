@@ -312,32 +312,43 @@ export function NovoPedido() {
       </div>
 
       {/* Product Grid */}
-      <div className="flex-1 p-4 overflow-y-auto">
-        <div className="grid grid-cols-3 gap-2 pb-24">
-          {filteredProducts?.map(prod => {
+      <div className="flex-1 p-3 overflow-y-auto">
+        <div className="grid grid-cols-3 gap-3 pb-32 content-start">
+          {filteredProducts?.map((prod, idx) => {
             const qty = getProductTotalQty(prod.id!);
             return (
               <div 
                 key={prod.id} 
                 onClick={() => handleProductClick(prod)}
+                style={{ animationDelay: `${idx * 30}ms` }}
                 className={clsx(
-                  "relative bg-zinc-900 rounded-xl overflow-hidden border transition-all active:scale-95 cursor-pointer touch-manipulation select-none",
-                  qty > 0 ? "border-blue-500 ring-1 ring-blue-500" : "border-zinc-800"
+                  "group relative flex flex-col bg-zinc-900 rounded-2xl overflow-hidden border transition-all duration-300 active:scale-95 cursor-pointer touch-manipulation select-none animate-in fade-in zoom-in-50 fill-mode-backwards shadow-sm h-full",
+                  qty > 0 ? "border-blue-500/50 shadow-[0_0_15px_-3px_rgba(59,130,246,0.3)] ring-1 ring-blue-500/50" : "border-zinc-800 hover:border-zinc-700"
                 )}
               >
                 {/* Image Area */}
-                <div className="aspect-square w-full bg-zinc-800 relative">
+                <div className="aspect-square w-full bg-zinc-800 relative overflow-hidden">
                   {prod.foto ? (
-                    <img src={prod.foto} alt={prod.nome} className="w-full h-full object-cover" />
+                    <img 
+                      src={prod.foto} 
+                      alt={prod.nome} 
+                      className={clsx(
+                        "w-full h-full object-cover transition-transform duration-500",
+                        qty > 0 ? "scale-110 blur-[2px] grayscale-[0.5]" : "group-hover:scale-110"
+                      )} 
+                    />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-zinc-600">
-                      <ImageIcon size={24} />
+                    <div className="w-full h-full flex items-center justify-center text-zinc-700 bg-zinc-800/50">
+                      <ImageIcon size={28} strokeWidth={1.5} />
                     </div>
                   )}
                   
-                  {/* Quantity Overlay (Centered) */}
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent opacity-60" />
+
+                  {/* Quantity Overlay (Centered & Animated) */}
                   {qty > 0 && (
-                    <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center backdrop-blur-[1px] p-1 gap-1">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-1 gap-1 z-10 animate-in zoom-in-75 duration-200">
                       {(() => {
                         const tipo = prod.tipoOpcao || (prod.temOpcaoTamanho ? 'tamanho_pg' : 'padrao');
                         
@@ -351,7 +362,7 @@ export function NovoPedido() {
                               const variant = parts[2];   // Normal, Zero
                               
                               return (
-                                 <span key={k} className="text-xs font-bold text-white drop-shadow-lg leading-tight whitespace-nowrap">
+                                 <span key={k} className="text-[10px] font-black uppercase tracking-wide text-white bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm border border-white/10 shadow-sm">
                                    {q} {container} <span className={variant === 'Zero' ? 'text-green-400' : ''}>{variant[0]}</span>
                                  </span>
                               );
@@ -371,9 +382,6 @@ export function NovoPedido() {
                           Object.entries(cart).forEach(([k, q]) => {
                             if (!k.startsWith(`${prod.id}-`) || q <= 0) return;
                             const parts = k.split('-');
-                            // Format: ID-Flavor-Size
-                            // But flavor might contain hyphens, so we need to be careful
-                            // Last part is always Size (P or G)
                             const size = parts[parts.length - 1];
                             const flavor = parts.slice(1, parts.length - 1).join('-');
                             
@@ -382,27 +390,24 @@ export function NovoPedido() {
                             if (size === 'G') flavorCounts[flavor].G += q;
                           });
 
-                          // Show concise summary
                           return (
-                            <div className="flex flex-col items-center gap-0.5 w-full px-1">
-                              {Object.entries(flavorCounts).slice(0, 3).map(([flavor, counts]) => (
-                                <span key={flavor} className="text-[10px] font-bold text-white drop-shadow-lg leading-tight text-center bg-black/40 px-1 rounded w-full truncate">
+                            <div className="flex flex-col items-center gap-1 w-full px-1">
+                              {Object.entries(flavorCounts).slice(0, 2).map(([flavor, counts]) => (
+                                <span key={flavor} className="text-[9px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded-md backdrop-blur-sm w-full truncate text-center border border-white/10">
                                   {flavor}: {counts.P > 0 ? `${counts.P}P` : ''} {counts.G > 0 ? `${counts.G}G` : ''}
                                 </span>
                               ))}
-                              {Object.keys(flavorCounts).length > 3 && (
-                                <span className="text-[10px] text-white">+{Object.keys(flavorCounts).length - 3} mais...</span>
+                              {Object.keys(flavorCounts).length > 2 && (
+                                <span className="text-[9px] text-white font-bold bg-black/40 px-1.5 rounded-full">+{Object.keys(flavorCounts).length - 2}</span>
                               )}
                             </div>
                           );
                         }
 
                         if (tipo === 'combinado') {
-                          // Calculate total combined items
                           const combinedCount = Object.keys(cart).filter(k => k.startsWith(`${prod.id}-COMBINADO-`)).reduce((acc, k) => acc + cart[k], 0);
-                          
                           if (combinedCount === 0) return null;
-                          return <span className="text-4xl font-bold text-white drop-shadow-lg">{combinedCount}</span>;
+                          return <span className="text-4xl font-black text-white drop-shadow-xl scale-110">{combinedCount}</span>;
                         }
 
                         if (tipo === 'sabores' && prod.sabores) {
@@ -412,52 +417,51 @@ export function NovoPedido() {
                           
                           if (total === 0) return null;
 
-                          // Show breakdown if <= 2 items, otherwise show total
                           const items = Object.entries(cart)
                             .filter(([k]) => k.startsWith(`${prod.id}-`) && cart[k] > 0);
                           
                           if (items.length <= 2) {
                              return items.map(([k, q]) => {
-                               const flavor = k.split('-').slice(1).join('-'); // Rejoin in case flavor has hyphen
+                               const flavor = k.split('-').slice(1).join('-');
                                return (
-                                <span key={k} className="text-xs font-bold text-white drop-shadow-lg leading-tight text-center">
-                                  {q}x {flavor.substring(0, 10)}{flavor.length > 10 ? '...' : ''}
+                                <span key={k} className="text-[10px] font-bold text-white bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-sm text-center border border-white/10 w-full truncate">
+                                  {q}x {flavor}
                                 </span>
                                );
                              });
                           }
                           
-                          return <span className="text-4xl font-bold text-white drop-shadow-lg">{total}</span>;
+                          return <span className="text-4xl font-black text-white drop-shadow-xl scale-110">{total}</span>;
                         }
 
                         if (tipo === 'tamanho_pg') {
                           return (
-                            <>
+                            <div className="flex flex-col gap-1">
                               {cart[`${prod.id}-P`] > 0 && (
-                                <span className="text-xl font-bold text-white drop-shadow-lg leading-none whitespace-nowrap">
+                                <span className="text-lg font-black text-white drop-shadow-lg">
                                   {cart[`${prod.id}-P`]} P
                                 </span>
                               )}
                               {cart[`${prod.id}-G`] > 0 && (
-                                <span className="text-xl font-bold text-white drop-shadow-lg leading-none whitespace-nowrap">
+                                <span className="text-lg font-black text-white drop-shadow-lg">
                                   {cart[`${prod.id}-G`]} G
                                 </span>
                               )}
-                            </>
+                            </div>
                           );
                         }
 
                         // Default
-                        return <span className="text-4xl font-bold text-white drop-shadow-lg">{qty}</span>;
+                        return <span className="text-5xl font-black text-white drop-shadow-2xl scale-110 tracking-tighter">{qty}</span>;
                       })()}
                     </div>
                   )}
                 </div>
 
                 {/* Name */}
-                <div className="px-1 py-2 flex items-center justify-center min-h-[2.5rem]">
+                <div className="px-2 py-3 flex items-center justify-center min-h-[3rem] relative z-20 bg-zinc-900">
                   <h3 className={clsx(
-                    "text-[10px] font-bold leading-tight text-center break-words whitespace-normal uppercase",
+                    "text-[11px] font-bold leading-tight text-center break-words uppercase tracking-wide",
                     qty > 0 ? "text-blue-400" : "text-zinc-300"
                   )}>
                     {prod.nome}
@@ -471,7 +475,7 @@ export function NovoPedido() {
                       e.stopPropagation();
                       handleRemoveProduct(prod.id!);
                     }}
-                    className="absolute top-1 right-1 w-6 h-6 bg-red-500/90 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"
+                    className="absolute top-1 right-1 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform z-30 border-2 border-zinc-900"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -481,10 +485,12 @@ export function NovoPedido() {
           })}
           
           {filteredProducts?.length === 0 && (
-            <div className="col-span-3 text-center py-12 text-zinc-500">
-              Nenhum produto encontrado.
-              <br />
-              <span className="text-sm">Gerencie o cardápio na tela inicial.</span>
+            <div className="col-span-3 flex flex-col items-center justify-center py-16 text-zinc-500 animate-in fade-in zoom-in-95">
+              <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-4">
+                <Search size={32} className="opacity-50" />
+              </div>
+              <p className="font-medium">Nenhum produto encontrado</p>
+              <span className="text-sm opacity-60 mt-1">Tente buscar por outro nome</span>
             </div>
           )}
         </div>
