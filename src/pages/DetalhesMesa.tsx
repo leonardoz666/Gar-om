@@ -2,9 +2,11 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { formatDuration } from '../utils/format';
-import { ArrowLeft, Plus, CheckCircle2, XCircle, DollarSign, Clock, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, CheckCircle2, XCircle, DollarSign, Clock, Pencil, Share2, Copy } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useState, useEffect } from 'react';
+
+import { ConfirmationModal } from '../components/ConfirmationModal';
 
 export function DetalhesMesa() {
   const { id } = useParams<{ id: string }>();
@@ -15,12 +17,61 @@ export function DetalhesMesa() {
     db.itens.where('mesaId').equals(id!).sortBy('criadoEm')
   , [id]);
 
+  // Modals state
+  const [itemToToggleCancel, setItemToToggleCancel] = useState<{id: string, current: boolean} | null>(null);
+  const [alertInfo, setAlertInfo] = useState<{title: string, message: string, type: 'success' | 'danger'} | null>(null);
+
   // Timer for duration
   const [, setTick] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => setTick(t => t + 1), 60000);
     return () => clearInterval(timer);
   }, []);
+
+  const handleShare = async () => {
+    if (!mesa || !itens) return;
+
+    const lines = [
+      `*MESA ${mesa.numero}*`,
+      `_Aberto há: ${formatDuration(mesa.abertaEm)}_`,
+      '',
+      ...itens.filter(i => !i.cancelado).map(item => {
+        let line = `${item.quantidade}x ${item.descricao}`;
+        if (item.observacao) line += `\n   _Obs: ${item.observacao}_`;
+        return line;
+      }),
+      '',
+      `*Total de Itens: ${itens.filter(i => !i.cancelado).reduce((acc, i) => acc + i.quantidade, 0)}*`
+    ];
+
+    const text = lines.join('\n');
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Pedido Mesa ${mesa.numero}`,
+          text: text
+        });
+      } catch (err) {
+        console.error('Error sharing:', err);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(text);
+        setAlertInfo({
+          title: 'Copiado!',
+          message: 'Resumo copiado para a área de transferência.',
+          type: 'success'
+        });
+      } catch (err) {
+        setAlertInfo({
+          title: 'Erro',
+          message: 'Não foi possível copiar o resumo.',
+          type: 'danger'
+        });
+      }
+    }
+  };
 
   if (!mesa) return null;
 
@@ -29,9 +80,10 @@ export function DetalhesMesa() {
     if (navigator.vibrate) navigator.vibrate(20);
   };
 
-  const toggleCancelado = (itemId: string, current?: boolean) => {
-    if (confirm('Cancelar este item?')) {
-        db.itens.update(itemId, { cancelado: !current });
+  const handleToggleCancel = () => {
+    if (itemToToggleCancel) {
+      db.itens.update(itemToToggleCancel.id, { cancelado: !itemToToggleCancel.current });
+      setItemToToggleCancel(null);
     }
   };
 
@@ -50,7 +102,12 @@ export function DetalhesMesa() {
               {formatDuration(mesa.abertaEm)}
             </div>
           </div>
-          <div className="w-10" /> {/* Spacer */}
+          <button 
+            onClick={handleShare}
+            className="p-2 -mr-2 text-blue-400 hover:bg-blue-400/10 rounded-full transition-colors"
+          >
+            {navigator.share ? <Share2 size={24} /> : <Copy size={24} />}
+          </button>
         </div>
       </header>
 
@@ -74,7 +131,9 @@ export function DetalhesMesa() {
                 </div>
                 <div className={clsx(
                   "flex items-center text-[10px] font-medium bg-zinc-950/30 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap",
-                  !item.entregue && !item.cancelado ? "text-amber-400" : "text-zinc-500"
+                  item.cancelado ? "text-zinc-500" :
+                  !item.lancado ? "text-amber-400 font-bold" :
+                  !item.entregue ? "text-blue-400" : "text-emerald-500"
                 )}>
                   <Clock size={10} className="mr-1" />
                   {formatDuration(item.criadoEm)}
@@ -108,7 +167,7 @@ export function DetalhesMesa() {
                 </>
               )}
                <button
-                  onClick={() => toggleCancelado(item.id, item.cancelado)}
+                  onClick={() => setItemToToggleCancel({ id: item.id, current: !!item.cancelado })}
                   className="p-1.5 rounded-full bg-zinc-800 text-red-900 hover:text-red-500"
                 >
                   <XCircle size={18} />
@@ -123,6 +182,30 @@ export function DetalhesMesa() {
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <ConfirmationModal
+        isOpen={!!itemToToggleCancel}
+        onClose={() => setItemToToggleCancel(null)}
+        onConfirm={handleToggleCancel}
+        title={itemToToggleCancel?.current ? "Reativar Item?" : "Cancelar Item?"}
+        description={itemToToggleCancel?.current 
+          ? "Deseja remover o status de cancelado deste item?" 
+          : "Tem certeza que deseja cancelar este item? Ele continuará visível mas marcado como cancelado."
+        }
+        confirmText={itemToToggleCancel?.current ? "Reativar" : "Cancelar Item"}
+        variant={itemToToggleCancel?.current ? "success" : "danger"}
+      />
+
+      <ConfirmationModal
+        isOpen={!!alertInfo}
+        onClose={() => setAlertInfo(null)}
+        title={alertInfo?.title || ''}
+        description={alertInfo?.message}
+        variant={alertInfo?.type === 'success' ? 'success' : 'danger'}
+        showCancel={false}
+        confirmText="OK"
+      />
 
       {/* Footer Actions */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-zinc-950 border-t border-zinc-900 flex gap-4">

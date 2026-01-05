@@ -4,11 +4,13 @@ import { db, Produto } from '../db';
 import { ArrowLeft, Plus, Search, Trash2, Upload, X, Pencil } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 
 export function GerenciarProdutos() {
   const navigate = useNavigate();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [deleteConfirmationId, setDeleteConfirmationId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Form State
@@ -98,9 +100,10 @@ export function GerenciarProdutos() {
     setIsAdding(false);
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Tem certeza que deseja excluir este produto?')) {
-      await db.produtos.delete(id);
+  const confirmDelete = async () => {
+    if (deleteConfirmationId) {
+      await db.produtos.delete(deleteConfirmationId);
+      setDeleteConfirmationId(null);
     }
   };
 
@@ -153,7 +156,7 @@ export function GerenciarProdutos() {
                 <Pencil size={16} />
               </button>
               <button
-                onClick={() => handleDelete(prod.id!)}
+                onClick={() => setDeleteConfirmationId(prod.id!)}
                 className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-red-500 transition-colors"
               >
                 <Trash2 size={16} />
@@ -303,6 +306,16 @@ export function GerenciarProdutos() {
           </div>
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={!!deleteConfirmationId}
+        onClose={() => setDeleteConfirmationId(null)}
+        onConfirm={confirmDelete}
+        title="Excluir Produto?"
+        description="Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        variant="danger"
+      />
     </div>
   );
 }

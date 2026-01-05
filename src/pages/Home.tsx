@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db';
+import { db, Mesa } from '../db';
 import { Link } from 'react-router-dom';
 import { Plus, History, Clock, Settings, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { formatDuration } from '../utils/format';
@@ -18,7 +18,11 @@ export function Home() {
   );
 
   const updateStatus = async (id: string, status: 'lancado' | 'esperando_lancamento') => {
-    await db.mesas.update(id, { statusLancamento: status });
+      await db.transaction('rw', db.mesas, db.itens, async () => {
+        await db.mesas.update(id, { statusLancamento: status });
+        // Sync items with mesa status
+        await db.itens.where('mesaId').equals(id).modify({ lancado: status === 'lancado' });
+      });
     setEditingStatusId(null);
   };
 
@@ -132,10 +136,14 @@ export function Home() {
     seedAndCleanup();
   }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const getStatusColor = (mesa: Mesa) => {
+    switch (mesa.status) {
       case 'aberta': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-      case 'em_andamento': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+      case 'em_andamento': 
+        if (mesa.statusLancamento === 'lancado') {
+          return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+        }
+        return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
       case 'finalizando': return 'bg-red-500/20 text-red-400 border-red-500/30';
       default: return 'bg-zinc-800 text-zinc-400 border-zinc-700';
     }
@@ -176,7 +184,7 @@ export function Home() {
             className={clsx(
               "flex flex-col p-3 rounded-xl border transition-all active:scale-[0.98] min-h-[140px]",
               "bg-zinc-900",
-              getStatusColor(mesa.status)
+              getStatusColor(mesa)
             )}
           >
             <div className="flex justify-between items-start mb-2">

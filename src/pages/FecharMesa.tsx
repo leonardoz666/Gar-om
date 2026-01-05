@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { formatDuration } from '../utils/format';
 import { ArrowLeft, CheckCheck, Wallet } from 'lucide-react';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 
 export function FecharMesa() {
   const { id } = useParams<{ id: string }>();
@@ -14,12 +15,11 @@ export function FecharMesa() {
   const mesa = useLiveQuery(() => db.mesas.get(id!), [id]);
 
   const [pagamento, setPagamento] = useState('');
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
 
   if (!mesa) return null;
 
   const handleClose = async () => {
-    if (!confirm('Tem certeza que deseja encerrar esta mesa?')) return;
-
     await db.mesas.update(id!, {
       status: 'fechada',
       fechadaEm: new Date().toISOString(),
@@ -79,12 +79,22 @@ export function FecharMesa() {
       </div>
 
       <button
-        onClick={handleClose}
+        onClick={() => setShowConfirmClose(true)}
         className="w-full bg-emerald-600 text-white font-bold text-xl py-4 rounded-xl shadow-lg shadow-emerald-900/20 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 mt-auto"
       >
         <CheckCheck size={24} />
         Encerrar Mesa
       </button>
+
+      <ConfirmationModal
+        isOpen={showConfirmClose}
+        onClose={() => setShowConfirmClose(false)}
+        onConfirm={handleClose}
+        title="Encerrar Mesa?"
+        description="Tem certeza que deseja encerrar esta mesa? Ela será movida para o histórico."
+        confirmText="Encerrar"
+        variant="success"
+      />
     </div>
   );
 }

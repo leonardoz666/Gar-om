@@ -165,8 +165,14 @@ export function NovoPedido() {
     await db.itens.update(itemId, {
       descricao: editDescricao,
       quantidade: editQuantidade,
-      observacao: editObservacao
+      observacao: editObservacao,
+      lancado: false
     });
+
+    // Update mesa status to pending since an item was modified
+    if (id) {
+      await db.mesas.update(id, { statusLancamento: 'esperando_lancamento' });
+    }
 
     navigate(-1);
   };
@@ -184,6 +190,7 @@ export function NovoPedido() {
       valor: 0, // No value as requested
       observacao: cartObservations[item.product.id!] || '',
       entregue: false,
+      lancado: false,
       criadoEm: new Date().toISOString()
     }));
 

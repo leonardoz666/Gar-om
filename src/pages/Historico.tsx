@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
-import { formatDuration } from '../utils/format';
-import { ArrowLeft, Calendar, Trash2, X } from 'lucide-react';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { ArrowLeft, Calendar, Trash2, X, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
+import { formatCurrency, formatDuration } from '../utils/format';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 
 export function Historico() {
   const navigate = useNavigate();
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [selectedMesaId, setSelectedMesaId] = useState<string | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [alertInfo, setAlertInfo] = useState<{title: string, message: string, type: 'success' | 'danger'} | null>(null);
 
   const mesas = useLiveQuery(async () => {
     const start = startOfDay(parseISO(date)).toISOString();
@@ -31,14 +34,45 @@ export function Historico() {
   const selectedMesa = mesas?.find(m => m.id === selectedMesaId);
 
   const handleClearHistory = async () => {
-    if (confirm('Tem certeza que deseja apagar TODO o histórico de mesas fechadas? Esta ação não pode ser desfeita.')) {
-      const fechadas = await db.mesas.where('status').equals('fechada').toArray();
-      const ids = fechadas.map(m => m.id!);
+    const fechadas = await db.mesas.where('status').equals('fechada').toArray();
+    const ids = fechadas.map(m => m.id!);
+    
+    // Delete items for these tables
+    await db.itens.where('mesaId').anyOf(ids).delete();
+    // Delete tables
+    await db.mesas.where('status').equals('fechada').delete();
+  };
+
+  const handleExportData = async () => {
+    try {
+      const allMesas = await db.mesas.toArray();
+      const allItens = await db.itens.toArray();
+      const allProdutos = await db.produtos.toArray();
+
+      const data = {
+        date: new Date().toISOString(),
+        mesas: allMesas,
+        itens: allItens,
+        produtos: allProdutos
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
       
-      // Delete items for these tables
-      await db.itens.where('mesaId').anyOf(ids).delete();
-      // Delete tables
-      await db.mesas.where('status').equals('fechada').delete();
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `garcom-backup-${format(new Date(), 'yyyy-MM-dd-HHmm')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export error:', error);
+      setAlertInfo({
+        title: 'Erro no Backup',
+        message: 'Ocorreu um erro ao exportar os dados.',
+        type: 'danger'
+      });
     }
   };
 
@@ -51,13 +85,22 @@ export function Historico() {
           </button>
           <h1 className="text-xl font-bold">Histórico</h1>
         </div>
-        <button 
-          onClick={handleClearHistory}
-          className="p-2 text-red-400 hover:bg-red-400/10 rounded-full transition-colors"
-          title="Limpar Histórico"
-        >
-          <Trash2 size={20} />
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleExportData}
+            className="p-2 text-blue-400 hover:bg-blue-400/10 rounded-full transition-colors"
+            title="Exportar Dados (Backup)"
+          >
+            <Download size={20} />
+          </button>
+          <button 
+            onClick={() => setShowClearConfirm(true)}
+            className="p-2 text-red-400 hover:bg-red-400/10 rounded-full transition-colors"
+            title="Limpar Histórico"
+          >
+            <Trash2 size={20} />
+          </button>
+        </div>
       </header>
 
       <div className="flex items-center gap-4 mb-6 bg-zinc-900 p-2 rounded-xl border border-zinc-800">
@@ -158,6 +201,26 @@ export function Historico() {
           </div>
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        onConfirm={handleClearHistory}
+        title="Limpar Histórico?"
+        description="Tem certeza que deseja apagar TODO o histórico de mesas fechadas? Esta ação não pode ser desfeita."
+        confirmText="Apagar Tudo"
+        variant="danger"
+      />
+
+      <ConfirmationModal
+        isOpen={!!alertInfo}
+        onClose={() => setAlertInfo(null)}
+        title={alertInfo?.title || ''}
+        description={alertInfo?.message}
+        variant={alertInfo?.type === 'success' ? 'success' : 'danger'}
+        showCancel={false}
+        confirmText="OK"
+      />
     </div>
   );
 }

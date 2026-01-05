@@ -22,6 +22,7 @@ export interface ItemPedido {
   observacao?: string;
   entregue: boolean;
   cancelado?: boolean;
+  lancado?: boolean;
   criadoEm: string; // ISO String
 }
 
@@ -76,6 +77,11 @@ export class GarcomDatabase extends Dexie {
     // Version 9: Add statusLancamento to mesas
     this.version(9).stores({
       mesas: 'id, numero, status, abertaEm, statusLancamento'
+    });
+
+    // Version 10: Add lancado to itens
+    this.version(10).stores({
+      itens: 'id, mesaId, criadoEm, lancado'
     });
 
 
