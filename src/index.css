@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-zinc-950 text-zinc-50 antialiased;
+}
+
+/* Custom scrollbar for better mobile feel if needed, but default is usually fine */
