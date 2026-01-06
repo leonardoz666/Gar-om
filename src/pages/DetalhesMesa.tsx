@@ -171,11 +171,20 @@ export function DetalhesMesa() {
             >
               {/* Header: Name (Clickable) & Timer */}
               <div className="flex flex-col gap-1">
-                <div className="flex justify-between items-start gap-1">
+                <div className="block">
+                  <div className={clsx(
+                    "float-right ml-1 mb-1 flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap border",
+                    status.bg,
+                    status.color
+                  )}>
+                    <Clock size={10} className="mr-1" />
+                    {formatDuration(item.criadoEm)}
+                  </div>
+
                   <Link 
                     to={!item.cancelado ? `/mesa/${id}/pedido/${item.id}` : '#'}
                     className={clsx(
-                      "font-bold leading-tight group",
+                      "font-bold leading-tight group block",
                       item.cancelado && "opacity-50 pointer-events-none"
                     )}
                   >
@@ -187,15 +196,6 @@ export function DetalhesMesa() {
                       {item.descricao}
                     </span>
                   </Link>
-
-                  <div className={clsx(
-                    "flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap border shrink-0",
-                    status.bg,
-                    status.color
-                  )}>
-                    <Clock size={10} className="mr-1" />
-                    {formatDuration(item.criadoEm)}
-                  </div>
                 </div>
 
                 {item.observacao && (
