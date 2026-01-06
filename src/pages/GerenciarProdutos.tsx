@@ -270,19 +270,19 @@ export function GerenciarProdutos() {
                  <Utensils size={14} className="text-blue-400" />}
               </div>
 
-              {/* Delete Button (Floating) - Smaller */}
+              {/* Delete Button (Floating) - Smaller, always visible on mobile */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setDeleteConfirmationId(prod.id!);
                 }}
-                className="absolute top-1.5 right-1.5 p-1.5 bg-red-500/80 backdrop-blur-md text-white rounded-md hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 duration-200 shadow-lg"
+                className="absolute top-1.5 right-1.5 p-1.5 bg-red-500/80 backdrop-blur-md text-white rounded-md hover:bg-red-500 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 translate-y-0 md:translate-y-2 md:group-hover:translate-y-0 duration-200 shadow-lg"
               >
                 <Trash2 size={14} />
               </button>
 
               {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent opacity-60" />
+              <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent opacity-60 pointer-events-none" />
             </div>
 
             {/* Content */}
