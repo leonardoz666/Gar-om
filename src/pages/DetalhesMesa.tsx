@@ -175,7 +175,7 @@ export function DetalhesMesa() {
                   <Link 
                     to={!item.cancelado ? `/mesa/${id}/pedido/${item.id}` : '#'}
                     className={clsx(
-                      "font-bold leading-tight group line-clamp-2",
+                      "font-bold leading-tight group",
                       item.cancelado && "opacity-50 pointer-events-none"
                     )}
                   >
@@ -199,7 +199,7 @@ export function DetalhesMesa() {
                 </div>
 
                 {item.observacao && (
-                  <p className="text-[10px] text-zinc-500 italic font-normal line-clamp-2 leading-tight">
+                  <p className="text-[10px] text-zinc-500 italic font-normal leading-tight">
                     "{item.observacao}"
                   </p>
                 )}
