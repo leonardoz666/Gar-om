@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
-import { ArrowLeft, Calendar, Trash2, X, Download } from 'lucide-react';
+import { ArrowLeft, Calendar, Trash2, X, Download, CalendarX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { formatCurrency, formatDuration } from '../utils/format';
