@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Mesa } from '../db';
 import { Link } from 'react-router-dom';
-import { Plus, History, Clock, Settings, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Plus, History, Clock, Settings, AlertCircle, CheckCircle2, X, DollarSign, Utensils, ClipboardList, ArrowRight, Store } from 'lucide-react';
 import { formatDuration } from '../utils/format';
 import { clsx } from 'clsx';
 import { useState, useEffect } from 'react';
@@ -244,8 +244,14 @@ export function Home() {
         ))}
 
         {mesas?.length === 0 && (
-          <div className="col-span-2 text-center py-12 text-zinc-500">
-            <p>Nenhuma mesa aberta</p>
+          <div className="col-span-2 flex flex-col items-center justify-center py-24 text-zinc-600 gap-6">
+            <div className="w-24 h-24 rounded-full bg-zinc-900 flex items-center justify-center shadow-inner border border-zinc-800">
+               <Store size={48} strokeWidth={1.5} className="opacity-50" />
+            </div>
+            <div className="text-center">
+               <p className="text-xl font-bold text-zinc-500">Nenhuma mesa aberta</p>
+               <p className="text-sm text-zinc-700 mt-1">Clique no + para abrir uma nova mesa</p>
+            </div>
           </div>
         )}
       </div>
@@ -258,31 +264,74 @@ export function Home() {
       </Link>
 
       {editingStatusId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 animate-in fade-in duration-200" onClick={() => setEditingStatusId(null)}>
-          <div className="bg-zinc-900 rounded-xl p-6 w-full max-w-sm space-y-4 border border-zinc-800 shadow-xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-zinc-100 text-center">Alterar Status de Lançamento</h3>
-            <div className="grid grid-cols-1 gap-3">
-              <button
-                onClick={() => updateStatus(editingStatusId, 'esperando_lancamento')}
-                className="p-4 rounded-lg bg-orange-500/10 text-orange-400 border border-orange-500/20 font-medium hover:bg-orange-500/20 flex items-center justify-center gap-2"
-              >
-                <AlertCircle size={20} />
-                Esperando Lançamento
-              </button>
-              <button
-                onClick={() => updateStatus(editingStatusId, 'lancado')}
-                className="p-4 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium hover:bg-blue-500/20 flex items-center justify-center gap-2"
-              >
-                <CheckCircle2 size={20} />
-                Lançado
-              </button>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setEditingStatusId(null)}>
+          <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm space-y-6 border border-zinc-800 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+               <div>
+                  <h3 className="text-xl font-bold text-zinc-100">Mesa {mesas?.find(m => m.id === editingStatusId)?.numero}</h3>
+                  <p className="text-sm text-zinc-500">Ações Rápidas</p>
+               </div>
+               <button onClick={() => setEditingStatusId(null)} className="p-2 bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors">
+                  <X size={20} />
+               </button>
             </div>
-            <button 
-              onClick={() => setEditingStatusId(null)}
-              className="w-full p-3 text-zinc-400 hover:text-zinc-200 text-sm"
-            >
-              Cancelar
-            </button>
+
+            <div className="space-y-3">
+               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Status de Lançamento</label>
+               <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => updateStatus(editingStatusId, 'esperando_lancamento')}
+                    className="p-3 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 font-bold hover:bg-orange-500/20 flex flex-col items-center justify-center gap-2 transition-colors"
+                  >
+                    <AlertCircle size={24} />
+                    <span className="text-xs">Pendente</span>
+                  </button>
+                  <button
+                    onClick={() => updateStatus(editingStatusId, 'lancado')}
+                    className="p-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold hover:bg-blue-500/20 flex flex-col items-center justify-center gap-2 transition-colors"
+                  >
+                    <CheckCircle2 size={24} />
+                    <span className="text-xs">Lançado</span>
+                  </button>
+               </div>
+            </div>
+
+            <div className="space-y-3">
+               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Ações</label>
+               
+               <Link 
+                  to={`/mesa/${editingStatusId}/fechar`}
+                  className="flex items-center justify-between p-4 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors group"
+               >
+                  <div className="flex items-center gap-4">
+                     <div className="p-2 bg-emerald-500/20 rounded-lg group-hover:scale-110 transition-transform">
+                        <DollarSign size={20} />
+                     </div>
+                     <div>
+                        <span className="font-bold block text-lg">Fechar Mesa</span>
+                        <span className="text-xs opacity-70">Calcular total e encerrar</span>
+                     </div>
+                  </div>
+                  <ArrowRight size={18} />
+               </Link>
+
+               <Link 
+                  to={`/mesa/${editingStatusId}`}
+                  className="flex items-center justify-between p-4 rounded-xl bg-zinc-800/50 text-zinc-300 border border-zinc-700/50 hover:bg-zinc-800 transition-colors group"
+               >
+                  <div className="flex items-center gap-4">
+                     <div className="p-2 bg-zinc-800 rounded-lg border border-zinc-700 group-hover:scale-110 transition-transform">
+                        <Utensils size={20} />
+                     </div>
+                     <div>
+                        <span className="font-bold block">Ver Detalhes</span>
+                        <span className="text-xs opacity-70">Adicionar pedidos e ver itens</span>
+                     </div>
+                  </div>
+                  <ArrowRight size={18} />
+               </Link>
+            </div>
           </div>
         </div>
       )}

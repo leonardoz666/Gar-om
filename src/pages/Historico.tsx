@@ -146,8 +146,14 @@ export function Historico() {
         ))}
 
         {mesas?.length === 0 && (
-          <div className="text-center py-12 text-zinc-600">
-            <p>Nenhuma mesa fechada nesta data</p>
+          <div className="flex flex-col items-center justify-center py-24 text-zinc-600 gap-6">
+            <div className="w-24 h-24 rounded-full bg-zinc-900 flex items-center justify-center shadow-inner border border-zinc-800">
+              <CalendarX size={48} strokeWidth={1.5} className="opacity-50" />
+            </div>
+            <div className="text-center">
+              <p className="text-xl font-bold text-zinc-500">Nenhum histórico</p>
+              <p className="text-sm text-zinc-700 mt-1">Nenhuma mesa foi fechada nesta data</p>
+            </div>
           </div>
         )}
       </div>

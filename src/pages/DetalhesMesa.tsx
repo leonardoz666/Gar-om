@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { formatDuration } from '../utils/format';
-import { ArrowLeft, Plus, CheckCircle2, XCircle, DollarSign, Clock, Share2, Copy, Send, UtensilsCrossed, Users } from 'lucide-react';
+import { ArrowLeft, Plus, CheckCircle2, XCircle, DollarSign, Clock, Share2, Copy, Send, UtensilsCrossed, Users, ClipboardList } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useState, useEffect } from 'react';
 
