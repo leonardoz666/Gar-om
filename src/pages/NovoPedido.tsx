@@ -14,6 +14,7 @@ export function NovoPedido() {
   const [editDescricao, setEditDescricao] = useState('');
   const [editQuantidade, setEditQuantidade] = useState(1);
   const [editObservacao, setEditObservacao] = useState('');
+  const [editProduct, setEditProduct] = useState<Produto | null>(null);
 
   // --- ADD MODE STATE (Bulk Selection) ---
   const [searchTerm, setSearchTerm] = useState('');
