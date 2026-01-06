@@ -15,6 +15,9 @@ export function NovoPedido() {
   const [editQuantidade, setEditQuantidade] = useState(1);
   const [editObservacao, setEditObservacao] = useState('');
   const [editProduct, setEditProduct] = useState<Produto | null>(null);
+  
+  // Option selection states for Edit Mode
+  const [editOptionState, setEditOptionState] = useState<any>({}); 
 
   // --- ADD MODE STATE (Bulk Selection) ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,11 +47,64 @@ export function NovoPedido() {
           const found = sortedProds.find(p => item.descricao.toLowerCase().includes(p.nome.toLowerCase()));
           if (found) {
             setEditProduct(found);
+            
+            // Parse existing options
+            const variantText = item.descricao.replace(found.nome, '').replace(/\(|\)/g, '').trim();
+            const tipo = found.tipoOpcao || (found.temOpcaoTamanho ? 'tamanho_pg' : 'padrao');
+            
+            if (tipo === 'refrigerante') {
+               const parts = variantText.split(' ');
+               const type = parts.includes('Zero') ? 'Zero' : 'Normal';
+               const container = parts.find(p => ['Lata', 'Litro', 'KS', '600ml'].includes(p)) || parts[0] || 'Lata';
+               setEditOptionState({ container, type });
+            } else if (tipo === 'sabores_com_tamanho') {
+               const parts = variantText.split(' ');
+               const size = parts.length > 0 && ['P', 'G'].includes(parts[parts.length - 1]) ? parts.pop() : '';
+               const flavor = parts.join(' ');
+               setEditOptionState({ flavor, size });
+            } else if (tipo === 'tamanho_pg') {
+               setEditOptionState({ size: variantText });
+            } else if (tipo === 'sabores') {
+               setEditOptionState({ flavor: variantText });
+            }
           }
         }
       });
     }
   }, [itemId]);
+
+  const updateEditDescriptionFromOptions = (prod: Produto, state: any) => {
+    const tipo = prod.tipoOpcao || (prod.temOpcaoTamanho ? 'tamanho_pg' : 'padrao');
+    let variant = '';
+
+    if (tipo === 'refrigerante') {
+       if (state.container) {
+          variant = `${state.container} ${state.type || 'Normal'}`;
+       }
+    } else if (tipo === 'sabores_com_tamanho') {
+       if (state.flavor) {
+          variant = `${state.flavor}${state.size ? ' ' + state.size : ''}`;
+       }
+    } else if (tipo === 'tamanho_pg') {
+       variant = state.size;
+    } else if (tipo === 'sabores') {
+       variant = state.flavor;
+    }
+
+    if (variant) {
+       setEditDescricao(`${prod.nome} (${variant})`);
+    } else {
+       setEditDescricao(prod.nome);
+    }
+  };
+
+  const handleEditOptionChange = (key: string, value: string) => {
+     if (!editProduct) return;
+     
+     const nextState = { ...editOptionState, [key]: value };
+     setEditOptionState(nextState);
+     updateEditDescriptionFromOptions(editProduct, nextState);
+  };
 
   // Fetch all products for selection grid
   const allProducts = useLiveQuery(() => db.produtos.orderBy('nome').toArray(), []);
@@ -273,6 +329,126 @@ export function NovoPedido() {
                    rows={2}
                    className="w-full bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 rounded-2xl p-4 text-xl font-bold text-white outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-none leading-tight shadow-lg"
                  />
+                 
+                 {/* Options Selector */}
+                 {editProduct && (() => {
+                    const tipo = editProduct.tipoOpcao || (editProduct.temOpcaoTamanho ? 'tamanho_pg' : 'padrao');
+
+                    if (tipo === 'refrigerante') {
+                      return (
+                        <div className="space-y-3 bg-zinc-900/50 p-3 rounded-xl border border-zinc-800 mt-2">
+                           <div>
+                              <label className="text-[10px] text-zinc-500 font-bold uppercase mb-2 block">Tamanho</label>
+                              <div className="flex gap-2">
+                                 {['Lata', 'Litro', 'KS'].map(opt => (
+                                    <button
+                                      key={opt}
+                                      type="button"
+                                      onClick={() => handleEditOptionChange('container', opt)}
+                                      className={clsx(
+                                         "flex-1 py-2 rounded-lg text-sm font-bold transition-all border",
+                                         editOptionState.container === opt 
+                                           ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-900/20" 
+                                           : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700"
+                                      )}
+                                    >
+                                      {opt}
+                                    </button>
+                                 ))}
+                              </div>
+                           </div>
+                           <div>
+                              <label className="text-[10px] text-zinc-500 font-bold uppercase mb-2 block">Tipo</label>
+                              <div className="flex gap-2">
+                                 {['Normal', 'Zero'].map(opt => (
+                                    <button
+                                      key={opt}
+                                      type="button"
+                                      onClick={() => handleEditOptionChange('type', opt)}
+                                      className={clsx(
+                                         "flex-1 py-2 rounded-lg text-sm font-bold transition-all border",
+                                         editOptionState.type === opt 
+                                           ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-900/20" 
+                                           : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700"
+                                      )}
+                                    >
+                                      {opt}
+                                    </button>
+                                 ))}
+                              </div>
+                           </div>
+                        </div>
+                      );
+                    }
+
+                    if (tipo === 'tamanho_pg') {
+                        return (
+                           <div className="flex gap-2 mt-2">
+                              {['P', 'G'].map(size => (
+                                 <button
+                                    key={size}
+                                    type="button"
+                                    onClick={() => handleEditOptionChange('size', size)}
+                                    className={clsx(
+                                       "flex-1 py-3 rounded-xl text-lg font-black transition-all border",
+                                       editOptionState.size === size
+                                          ? "bg-blue-600 text-white border-blue-500 shadow-lg"
+                                          : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700"
+                                    )}
+                                 >
+                                    {size}
+                                 </button>
+                              ))}
+                           </div>
+                        );
+                    }
+
+                    if ((tipo === 'sabores' || tipo === 'sabores_com_tamanho') && editProduct.sabores) {
+                       return (
+                          <div className="space-y-3 mt-2">
+                             <div className="grid grid-cols-2 gap-2">
+                                {editProduct.sabores.map(flavor => (
+                                   <button
+                                      key={flavor}
+                                      type="button"
+                                      onClick={() => handleEditOptionChange('flavor', flavor)}
+                                      className={clsx(
+                                         "p-2 rounded-lg text-xs font-bold transition-all border min-h-[3rem] flex items-center justify-center text-center",
+                                         editOptionState.flavor === flavor
+                                            ? "bg-blue-600 text-white border-blue-500 shadow-lg"
+                                            : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700"
+                                      )}
+                                   >
+                                      {flavor}
+                                   </button>
+                                ))}
+                             </div>
+                             
+                             {tipo === 'sabores_com_tamanho' && (
+                                <div className="flex gap-2 border-t border-zinc-800 pt-3">
+                                    {['P', 'G'].map(size => (
+                                       <button
+                                          key={size}
+                                          type="button"
+                                          onClick={() => handleEditOptionChange('size', size)}
+                                          className={clsx(
+                                             "flex-1 py-2 rounded-lg text-sm font-black transition-all border",
+                                             editOptionState.size === size
+                                                ? "bg-blue-600 text-white border-blue-500 shadow-lg"
+                                                : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700"
+                                          )}
+                                       >
+                                          {size}
+                                       </button>
+                                    ))}
+                                </div>
+                             )}
+                          </div>
+                       );
+                    }
+
+                    return null;
+                 })()}
               </div>
 
               {/* Quantity Control */}
