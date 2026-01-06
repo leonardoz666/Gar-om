@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Produto } from '../db';
-import { ArrowLeft, Plus, Search, Trash2, Upload, X, Pencil, ImageIcon, Wine, Pizza, Utensils } from 'lucide-react';
+import { ArrowLeft, Plus, Search, Trash2, Upload, X, Pencil, ImageIcon, Wine, Pizza, Utensils, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { ConfirmationModal } from '../components/ConfirmationModal';
@@ -21,6 +21,8 @@ export function GerenciarProdutos() {
   const [newSabor, setNewSabor] = useState('');
   const [isDrink, setIsDrink] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
 
   const produtos = useLiveQuery(() => 
     db.produtos.toArray()
@@ -113,6 +115,68 @@ export function GerenciarProdutos() {
     return <Utensils size={20} className="text-blue-400" />;
   };
 
+  const handleExport = async () => {
+    const items = await db.produtos.toArray();
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      items
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cardapio.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      const items: any[] = Array.isArray(json) ? json : Array.isArray(json?.items) ? json.items : [];
+      if (!items.length) {
+        setImportStatus('Arquivo inválido ou vazio');
+        return;
+      }
+      const existing = await db.produtos.toArray();
+      const mapByName = new Map(existing.map(p => [p.nome.toLowerCase(), p.id!]));
+      let added = 0, updated = 0;
+      for (const i of items) {
+        const base = {
+          nome: i.nome,
+          preco: typeof i.preco === 'number' ? i.preco : 0,
+          favorito: !!i.favorito,
+          ultimoUso: new Date().toISOString(),
+          foto: i.foto,
+          temOpcaoTamanho: i.temOpcaoTamanho ?? (i.tipoOpcao === 'tamanho_pg'),
+          tipoOpcao: i.tipoOpcao ?? (i.temOpcaoTamanho ? 'tamanho_pg' : 'padrao'),
+          sabores: i.sabores,
+          isDrink: !!i.isDrink
+        } as Produto;
+        if (!base.nome) continue;
+        const id = mapByName.get(base.nome.toLowerCase());
+        if (id) {
+          await db.produtos.update(id, base);
+          updated++;
+        } else {
+          await db.produtos.add(base);
+          added++;
+        }
+      }
+      setImportStatus(`Importação concluída: ${added} adicionados, ${updated} atualizados`);
+      e.target.value = '';
+    } catch (err) {
+      console.error(err);
+      setImportStatus('Falha ao importar arquivo');
+    }
+  };
+
   return (
     <div className="min-h-screen pb-32 bg-zinc-950 relative">
       <header className="sticky top-0 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 z-10 p-4">
@@ -142,8 +206,37 @@ export function GerenciarProdutos() {
           >
             <Plus size={20} />
           </button>
+          <button
+            onClick={handleExport}
+            title="Exportar cardápio (JSON)"
+            className="bg-zinc-800 text-zinc-200 font-bold p-2.5 rounded-xl flex items-center justify-center border border-zinc-700 hover:bg-zinc-700 active:scale-95 transition-transform"
+          >
+            <Download size={18} />
+          </button>
+          <button
+            onClick={() => importInputRef.current?.click()}
+            title="Importar cardápio (JSON)"
+            className="bg-zinc-800 text-zinc-200 font-bold p-2.5 rounded-xl flex items-center justify-center border border-zinc-700 hover:bg-zinc-700 active:scale-95 transition-transform"
+          >
+            <Upload size={18} />
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={handleImportFileChange}
+          />
         </div>
       </header>
+
+      {importStatus && (
+        <div className="px-4">
+          <div className="mt-2 bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm rounded-xl px-3 py-2">
+            {importStatus}
+          </div>
+        </div>
+      )}
 
       {/* Product List */}
       <div className="p-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
