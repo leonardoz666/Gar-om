@@ -31,11 +31,19 @@ export function NovoPedido() {
   // Load existing item if editing
   useEffect(() => {
     if (itemId) {
-      db.itens.get(itemId).then(item => {
+      db.itens.get(itemId).then(async item => {
         if (item) {
           setEditDescricao(item.descricao);
           setEditQuantidade(item.quantidade);
           setEditObservacao(item.observacao || '');
+          
+          // Try to find product for image
+          const allProds = await db.produtos.toArray();
+          const sortedProds = allProds.sort((a, b) => b.nome.length - a.nome.length);
+          const found = sortedProds.find(p => item.descricao.toLowerCase().includes(p.nome.toLowerCase()));
+          if (found) {
+            setEditProduct(found);
+          }
         }
       });
     }
@@ -219,69 +227,103 @@ export function NovoPedido() {
   // --- RENDER EDIT MODE ---
   if (itemId) {
     return (
-      <div className="min-h-screen p-4 max-w-md mx-auto">
-        <header className="flex items-center gap-4 mb-6">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-zinc-400">
-            <ArrowLeft size={24} />
-          </button>
-          <h1 className="text-xl font-bold">Editar Pedido</h1>
-        </header>
-
-        <form onSubmit={handleSaveEdit} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-400">Produto</label>
-            <input
-              type="text"
-              value={editDescricao}
-              onChange={e => setEditDescricao(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-lg font-bold text-zinc-100 outline-none"
+      <div className="min-h-screen bg-zinc-950 flex flex-col relative animate-in fade-in duration-300">
+        
+        {/* Image Header */}
+        <div className="relative w-full h-64 shrink-0 bg-zinc-900 overflow-hidden">
+          {editProduct?.foto ? (
+            <img 
+              src={editProduct.foto} 
+              alt={editDescricao} 
+              className="w-full h-full object-cover"
             />
+          ) : (
+             <div className="w-full h-full flex items-center justify-center text-zinc-800 bg-zinc-900">
+                <ImageIcon size={64} strokeWidth={1} className="opacity-50" />
+             </div>
+          )}
+          
+          {/* Header Controls Overlay */}
+          <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-20 bg-gradient-to-b from-black/80 to-transparent">
+             <button 
+               onClick={() => navigate(-1)} 
+               className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/10 active:scale-95 transition-transform"
+             >
+               <ArrowLeft size={20} />
+             </button>
+             <span className="text-sm font-bold text-white/80 uppercase tracking-wider">Editar Item</span>
+             <div className="w-10" /> {/* Spacer */}
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-400">Quantidade</label>
-            <div className="flex items-center bg-zinc-900 rounded-xl border border-zinc-800 p-1">
-              <button
-                type="button"
-                onClick={() => setEditQuantidade(Math.max(1, editQuantidade - 1))}
-                className="p-3 text-zinc-400 hover:text-white rounded-lg"
-              >
-                <Minus size={20} />
-              </button>
-              <input
-                type="number"
-                value={editQuantidade}
-                onChange={e => setEditQuantidade(Math.max(1, parseInt(e.target.value) || 1))}
-                className="flex-1 bg-transparent text-center text-xl font-bold outline-none appearance-none"
-              />
-              <button
-                type="button"
-                onClick={() => setEditQuantidade(editQuantidade + 1)}
-                className="p-3 text-zinc-400 hover:text-white rounded-lg"
-              >
-                <Plus size={20} />
-              </button>
-            </div>
-          </div>
+          {/* Bottom Gradient */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent pointer-events-none" />
+        </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-400">Observação</label>
-            <textarea
-              value={editObservacao}
-              onChange={e => setEditObservacao(e.target.value)}
-              rows={2}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-zinc-100 outline-none resize-none"
-            />
-          </div>
+        {/* Content - Overlapping the image slightly */}
+        <div className="flex-1 px-6 -mt-12 relative z-10 flex flex-col pb-32 overflow-y-auto no-scrollbar">
+           <form onSubmit={handleSaveEdit} className="flex flex-col gap-6">
+              
+              {/* Description Input (styled as title) */}
+              <div className="space-y-2">
+                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">Descrição do Item</label>
+                 <textarea
+                   value={editDescricao}
+                   onChange={e => setEditDescricao(e.target.value)}
+                   rows={2}
+                   className="w-full bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 rounded-2xl p-4 text-xl font-bold text-white outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-none leading-tight shadow-lg"
+                 />
+              </div>
 
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white font-bold text-xl py-4 rounded-xl shadow-lg mt-8 flex items-center justify-center gap-2"
-          >
-            <Save size={24} />
-            Salvar Alterações
-          </button>
-        </form>
+              {/* Quantity Control */}
+              <div className="space-y-2">
+                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">Quantidade</label>
+                 <div className="flex items-center justify-between bg-zinc-900/50 border border-zinc-800 rounded-2xl p-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditQuantidade(Math.max(1, editQuantidade - 1))}
+                      className="w-14 h-14 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 flex items-center justify-center active:scale-90 transition-all shadow-sm"
+                    >
+                      <Minus size={24} />
+                    </button>
+                    
+                    <span className="text-4xl font-black text-white tabular-nums tracking-tight">{editQuantidade}</span>
+                    
+                    <button
+                      type="button"
+                      onClick={() => setEditQuantidade(editQuantidade + 1)}
+                      className="w-14 h-14 rounded-xl bg-blue-600 text-white flex items-center justify-center active:scale-90 transition-all shadow-lg shadow-blue-900/30"
+                    >
+                      <Plus size={24} />
+                    </button>
+                 </div>
+              </div>
+
+              {/* Observation */}
+              <div className="space-y-2">
+                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">Observação</label>
+                 <textarea
+                   value={editObservacao}
+                   onChange={e => setEditObservacao(e.target.value)}
+                   rows={3}
+                   placeholder="Alguma observação para a cozinha?"
+                   className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-zinc-300 outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-none text-base"
+                 />
+              </div>
+
+           </form>
+        </div>
+
+        {/* Fixed Save Button */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-zinc-950 via-zinc-950 to-transparent pt-12 z-20">
+           <button
+             onClick={(e) => handleSaveEdit(e as any)}
+             className="w-full bg-blue-600 text-white font-bold text-lg py-4 rounded-xl shadow-[0_0_20px_-5px_rgba(37,99,235,0.5)] active:scale-[0.98] transition-transform flex items-center justify-center gap-3"
+           >
+             <Save size={24} />
+             Salvar Alterações
+           </button>
+        </div>
+
       </div>
     );
   }
