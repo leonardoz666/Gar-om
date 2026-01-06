@@ -290,7 +290,7 @@ export function NovoPedido() {
   return (
     <div className="min-h-screen flex flex-col bg-zinc-950">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 p-4">
+      <div className="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 p-4">
         <div className="flex items-center gap-4 mb-4">
           <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-zinc-400">
             <ArrowLeft size={24} />

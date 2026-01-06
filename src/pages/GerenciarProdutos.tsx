@@ -179,7 +179,7 @@ export function GerenciarProdutos() {
 
   return (
     <div className="min-h-screen pb-32 bg-zinc-950 relative">
-      <header className="sticky top-0 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 z-10 p-4">
+      <header className="sticky top-0 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 z-40 p-4">
         <div className="flex items-center justify-between mb-4">
           <button onClick={() => navigate('/')} className="p-2 -ml-2 text-zinc-400 hover:text-white transition-colors">
             <ArrowLeft size={24} />
